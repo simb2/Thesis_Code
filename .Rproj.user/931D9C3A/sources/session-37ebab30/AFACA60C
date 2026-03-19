@@ -1,0 +1,26 @@
+{
+    "id": "AFACA60C",
+    "path": "~/Projects/Thesis/Code for Abstract/Thesis_Code/Run_Simulations/sim_study_noisy_variables_helpers.R",
+    "project_path": "Run_Simulations/sim_study_noisy_variables_helpers.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1773897972453.0,
+    "source_on_save": false,
+    "relative_order": 4,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "106,78",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1773897984,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1773897984152,
+    "read_only": false,
+    "read_only_alternatives": []
+}

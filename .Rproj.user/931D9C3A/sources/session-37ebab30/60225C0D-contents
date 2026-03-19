@@ -1,0 +1,160 @@
+sim_data_L <- function(N, V, q) {
+  Phi <- diag(q)
+  Sigma <- diag(V)
+  Lambda <- matrix(0, nrow = V, ncol = 2)
+  for (i in 1:(V)) {
+    for (j in 1:min(i, 2)) {
+      if (i == j) {
+        # Diagonal entries: positive values
+        Lambda[i, j] <- abs(rnorm(1, sd = sqrt(0.5)))
+      } else {
+        # Off-diagonal entries: can be any value in specified range
+        Lambda[i, j] <- rnorm(1, sd = sqrt(0.5))
+      }
+    }
+  }
+  # Lambda <- rbind(Lambda, matrix(0, nrow = 0.2 * V, ncol = 2))
+  data <- matrix(data = NA, nrow = dim(Lambda)[1], ncol = N)
+  factors <- matrix(data = NA, nrow = dim(Lambda)[2], ncol = N)
+  for (i in 1:N) {
+    f <- mvrnorm(1, mu = rep(0, dim(Lambda)[2]), Sigma = Phi)
+    factors[, i] <- f
+    data[, i] <- mvrnorm(1, mu = Lambda %*% f, Sigma = Sigma)
+  }
+  return(list(data = data, factors = factors, Lambda = Lambda, Sigma = Sigma, N = N, V = V))
+}
+
+emp_crps <- function(samp1, samp2, true_val) {
+  N <- length(samp1)
+  M <- length(samp2)
+  term1 <- term2 <- 0
+  for (i in 1:N) {
+    for (j in 1:M) {
+      term1 <- term1 + abs(samp1[i] - samp2[j])
+    }
+    term2 <- term2 + abs(samp1[i] - true_val)
+  }
+  
+  return(2 / (N * M) * term1 - 1 / N * term2)
+}
+
+
+
+sim_data_N <- function(N, V, q) {
+  Phi <- diag(q)
+  Sigma <- diag(V)
+  Lambda <- matrix(0, nrow = V, ncol = 2)
+  for (i in 1:V) {
+    for (j in 1:min(i, 2)) {
+      if (i == j) {
+        # Diagonal entries: positive values
+        Lambda[i, j] <- abs(rnorm(1, sd = sqrt(0.5)))
+      } else {
+        # Off-diagonal entries: can be any value in specified range
+        Lambda[i, j] <- rnorm(1, sd = sqrt(0.5))
+      }
+    }
+  }
+  data <- matrix(data = NA, nrow = dim(Lambda)[1], ncol = N)
+  factors <- matrix(data = NA, nrow = dim(Lambda)[2], ncol = N)
+  for (i in 1:N) {
+    f <- mvrnorm(1, mu = rep(0, dim(Lambda)[2]), Sigma = Phi)
+    factors[, i] <- f
+    data[, i] <- mvrnorm(1, mu = Lambda %*% f, Sigma = Sigma)
+  }
+  return(list(data = data, factors = factors, Lambda = Lambda, Sigma = Sigma, N = N, V = V))
+}
+
+emp_crps <- function(samp1, samp2, true_val) {
+  N <- length(samp1)
+  M <- length(samp2)
+  term1 <- term2 <- 0
+  for (i in 1:N) {
+    for (j in 1:M) {
+      term1 <- term1 + abs(samp1[i] - samp2[j])
+    }
+    term2 <- term2 + abs(samp1[i] - true_val)
+  }
+  
+  return(2 / (N * M) * term1 - 1 / N * term2)
+}
+
+avg_crps <- function(lambda_samps1, true_val) {
+  # compute the avg crps
+  
+  V <- nrow(lambda_samps1[1, , ])
+  q <- ncol(lambda_samps1[1, , ])
+  
+  crps <- 0
+  for (i in 1:V) {
+    for (j in 1:q) {
+      crps <- crps + crps_sample(true_val[i, j], dat = lambda_samps1[, i, j])
+    }
+  }
+  return(crps / (V * q))
+}
+
+# this is for the plt model
+get_starting_vals <- function(data) {
+  pc <- princomp(t(data))
+  factor_est <- t(pc$scores[, 1:2])
+  Lambda_start <- pc$loadings[, 1:2]
+  sigma2_start <- diag(cov(t(data - Lambda_start %*% factor_est)))
+  s2 <- 0.5
+  nu <- 3
+  return(list(
+    Lambda_0 = Lambda_start, sigma2_0 = sigma2_start, n_runs = 10000,
+    data = data, q = n_factors, nu = nu, s2 = s2, c_0 = 1, thin = 30, burn = 2000
+  ))
+}
+
+compute_posterior_estimates <- function(post_samp) {
+  Lambda_estimates <- apply(post_samp$Lambda, c(2, 3), mean)
+  sigma_est <- apply(post_samp$Variances, 2, mean)
+  factors_est <- apply(post_samp$Factors, c(2, 3), mean)
+  return(list(Lambda_estimates = Lambda_estimates, sigma_est = sigma_est, factors_est = factors_est))
+}
+
+compute_goodness_of_fit <- function(N, V, q, Lambda, Sigma, factors, Lambda_est, sigma_est, factors_est) {
+  runs <- 20
+  mse_vec <- numeric(runs)
+  
+  for (i in 1:runs) {
+    samp <- sim_data_3(N, Lambda, Sigma, factors = factors)
+    samp2 <- sim_data_3(N, Lambda_est, Sigma = diag(sigma_est), factors = factors_est)
+    mse_vec[i] <- mean((samp - samp2)^2)
+  }
+  return(list(mean(mse_vec), mse_vec))
+}
+
+make_heat_map <- function(Lambda) {
+  Lambda_df <- reshape2::melt(Lambda)
+  Lambda_df$Var1 <- factor(Lambda_df$Var1, levels = rev(unique(Lambda_df$Var1)))
+  Lambda_df$Var2 <- factor(Lambda_df$Var2)
+  plt <- ggplot(Lambda_df, aes(y = Var1, x = Var2, fill = value)) +
+    geom_tile() +
+    scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +
+    theme_minimal() +
+    labs(x = "j", y = "i") +
+    theme(axis.text.y = element_text(size = 7), legend.position = "none")
+  return(plt)
+}
+
+make_trace_acf_plot <- function(post_samp) {
+  T_stat_df <- tibble(
+    Value = post_samp$T_stat,
+    Iteration = 1:length(post_samp$T_stat)
+  )
+  acf <- acf(post_samp$T_stat)
+  trace <- ggplot(T_stat_df, mapping = aes(x = Iteration, y = Value)) +
+    geom_line(linewidth = 0.4, alpha = 0.5) +
+    theme_minimal() +
+    labs(x = "Iteration", y = "Value")
+  return(list(acf = acf, trace = trace))
+}
+
+contributed_variance_noise <- function(L, y) {
+  # from "relevant loadings"
+  rel_v <- sum(diag(L %*% t(L)))
+  rel_v/sum(diag(cov(y)))
+} 

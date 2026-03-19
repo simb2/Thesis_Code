@@ -1,0 +1,26 @@
+{
+    "id": "2E5BB5FC",
+    "path": "~/Projects/Thesis/Code for Abstract/Thesis_Code/Run_Simulations/run_sim_uglt_structure_overfitting.R",
+    "project_path": "Run_Simulations/run_sim_uglt_structure_overfitting.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1773897685662.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "200,4",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1773897211,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1773897211,
+    "read_only": false,
+    "read_only_alternatives": []
+}
