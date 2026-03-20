@@ -202,11 +202,6 @@ ggplot(df_all, aes(x = N, y = value, color = noisy, shape = mod)) +
   scale_color_manual(values = colours)
 
 
-
-library(ggplot2)
-library(tidyr)
-library(dplyr)
-
 df_baseline <- bind_rows(
   df_plt_no_noise,
   df_sparse_plt_no_noise,
