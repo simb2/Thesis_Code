@@ -1,5 +1,5 @@
 library(tidyverse)
-source(here('MCMC_Algorthims' ,'compute_log_likelihood_ratio.R'))
+source(here('MCMC_Algorithms' ,'compute_log_likelihood_ratio.R'))
 #' Samples the sparsity matrix
 #'
 #'
