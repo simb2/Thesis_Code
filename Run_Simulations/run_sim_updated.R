@@ -4,9 +4,9 @@ library(MASS)
 library(scoringRules) # CRPS
 library(here)
 
-source("sim_data_3.R")
-source('sim_study_noisy_variables/sim_study_noisy_variables_helpers.R')
-source("run_mcmc_UGLT_Static.R")
+source(here("Run_Simulations" ,"sim_data_3.R"))
+source(here("Run_Simulations" , 'sim_study_noisy_variables_helpers.R'))
+source(here("MCMC_Algorithms" , "run_mcmc_UGLT_Static.R"))
 
 # Prior specifications and Globals ----------------------------------------
 set.seed(20)
@@ -303,8 +303,8 @@ saveRDS(gof_inputs, "analysis_uglt_setting_UGLT.rds")
 ###########################################################
 ###########################################################
 
-source(here("Run_Simulation", "sim_data_2.R"))
-source(here("Run_Simulation", "sim_data_3.R"))
+source(here("Run_Simulations", "sim_data_2.R"))
+source(here("Run_Simulations", "sim_data_3.R"))
 source(here("MCMC_Algorithms", 'run_mcmc_sparse_PLT_Static.R'))
 
 
