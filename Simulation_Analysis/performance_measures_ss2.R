@@ -101,9 +101,6 @@ df_uglt <- tibble(
 df_plt
 df_uglt
 
-library(ggplot2)
-library(tidyr)
-library(dplyr)
 
 df_baseline <- bind_rows(
   df_uglt,
