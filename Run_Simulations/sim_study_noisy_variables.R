@@ -4,9 +4,7 @@ library(reshape2)
 library(here)
 library(MASS)
 library(cli)
-library(bayestestR) # map
 library(scoringRules) # CRPS
-library(coda) # effective sample size
 setwd(here())
 
 
