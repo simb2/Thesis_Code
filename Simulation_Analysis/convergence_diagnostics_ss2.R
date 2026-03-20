@@ -1,7 +1,7 @@
 # convergence_diagnostics ss2
 
-results_uglt_setting_plt <- readRDS(here("Run_Simulations",'results_uglt_setting_plt.rds'))
-results_uglt_setting_UGLT <- readRDS(here("Run_Simulations","results_uglt_setting_UGLT.rds"))
+results_uglt_setting_plt <- readRDS(here('results_uglt_setting_plt.rds'))
+results_uglt_setting_UGLT <- readRDS(here("results_uglt_setting_UGLT.rds"))
 
 
 geweke_results <- purrr::map(results_uglt_setting_plt$post_samps, function(x){
