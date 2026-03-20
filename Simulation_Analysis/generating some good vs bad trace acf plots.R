@@ -1,4 +1,3 @@
-library(coda)
 par(mfrow = c(1, 2))
 
 set.seed(42)
