@@ -1,4 +1,4 @@
-source('compute_log_likelihood_ratio.R')
+source(here('MCMC_Algorithms', 'compute_log_likelihood_ratio.R'))
 #' Samples pivots
 #'
 #' @param delta The sparsity matrix (V x q)
