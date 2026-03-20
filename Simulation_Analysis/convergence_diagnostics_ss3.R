@@ -1,9 +1,9 @@
 # convergence_diagnostics ss2
 
-overfit_post_draws_UGLT <- readRDS(here("Run_Simulations", "overfit_post_draws_UGLT.rds"))
-overfit_post_draws_plt_sparse <- readRDS(here("Run_Simulations","overfit_post_draws_plt_sparse.rds"))
-overfit_plt_setting_post_draws_plt_sparse <- readRDS(here("Run_Simulations","overfit_plt_setting_post_draws_plt_sparse.rds"))
-overfit_plt_setting_post_draws_UGLT <- readRDS(here("Run_Simulations","overfit_plt_setting_post_draws_UGLT.rds"))
+overfit_post_draws_UGLT <- readRDS(here("overfit_post_draws_UGLT.rds"))
+overfit_post_draws_plt_sparse <- readRDS(here("overfit_post_draws_plt_sparse.rds"))
+overfit_plt_setting_post_draws_plt_sparse <- readRDS(here("overfit_plt_setting_post_draws_plt_sparse.rds"))
+overfit_plt_setting_post_draws_UGLT <- readRDS(here("overfit_plt_setting_post_draws_UGLT.rds"))
 geweke_results <- purrr::map(overfit_post_draws_plt_sparse, function(x){
   LaplacesDemon::Geweke.Diagnostic(x$T_stat)
 })
