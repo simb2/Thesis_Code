@@ -93,7 +93,7 @@ get_starting_vals <- function(samp) {
   V <- samp$V
   
   return(list(
-    N = samp$N, q = nrow(samp$factors) + 3, n_runs = 6000, alpha = rep(1.5, V), beta = rep(1.5, V), 
+    N = samp$N, q = nrow(samp$factors) + 3, n_runs = 2000, alpha = rep(1.5, V), beta = rep(1.5, V), 
     theta.shape = rep(1.5, V), theta.rate = rep(1.5, V), hyperparams = list(aH = 2, bH = 2), data = data, thin = 2, burn = 1000
   ))
 }
