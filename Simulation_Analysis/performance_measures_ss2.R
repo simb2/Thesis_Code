@@ -4,9 +4,9 @@ colours <- c('#332288', '#117733', '#44AA99', '#88CCEE',
 # Model results
 library(tidyverse)
 library(MASS)
-results_uglt_setting_plt <- readRDS(here("Run_Simulations","results_uglt_setting_plt.rds"))
-results_uglt_setting_UGLT <- readRDS(here("Run_Simulations","results_uglt_setting_UGLT.rds"))
-source('sim_data_3.R')
+results_uglt_setting_plt <- readRDS(here("results_uglt_setting_plt.rds"))
+results_uglt_setting_UGLT <- readRDS(here("results_uglt_setting_UGLT.rds"))
+source("Run_Simulations" ,'sim_data_3.R')
 
 compute_goodness_of_fit <- function(N, V, q, Lambda, Sigma, factors, Lambda_est, sigma_est, factors_est) {
   runs <- 20
