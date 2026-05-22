@@ -1,0 +1,94 @@
+---
+title: "Real Data Analysis"
+format: html
+editor: visual
+---
+
+## Library Imports
+
+
+```{r}
+library(data.table)
+library(purrr)
+library(ggplot2)
+library(ggpubr)
+library(dplyr)
+library(MOFA2)
+library(here)
+source(here('MCMC_Algorithms', 'run_mcmc_UGLT_Static.R'))
+set.seed(1)
+```
+
+
+```{r}
+dt <- fread("ftp://ftp.ebi.ac.uk/pub/databases/mofa/microbiome/data.txt.gz")
+metadata <- fread("ftp://ftp.ebi.ac.uk/pub/databases/mofa/microbiome/metadata.txt.gz")
+head(dt)
+```
+
+You can add options to executable code like this
+
+```{r}
+dt_bact = dt[dt$view == 'Bacteria', ]
+head(dt_bact)
+```
+
+
+```{r}
+dt_bact = dt_bact |> tidyr::pivot_wider(names_from = sample, values_from = 'value') |> dplyr::select(-c('view'))
+```
+
+
+```{r}
+head(dt_bact)
+```
+
+
+```{r}
+# Now fitting the bayesian factor model. Let's just try to use a static model with 10 factors.
+V = dim(dt_bact)[1]
+fit1_UGLT_Static_10f=run_mcmc_UGLT(N = (dim(dt_bact)[2] - 1), q = 10, n_runs = 14000, alpha = rep(1, V),
+  beta = rep(1, V), theta.shape = rep(1.5, V), theta.rate = rep(1.5, V), hyperparams = list(aH = 2, bH = 2), data = as.matrix(dplyr::select(dt_bact, -c('feature'))), thin = 7, ident = TRUE, burn = 2000)
+
+```
+
+```{r}
+fit1_UGLT_Static_10f$estimates[[1]]$lambda_est
+
+```
+```{r}
+colSums(fit1_UGLT_Static_10f$estimates[[1]]$lambda_est == 0)
+```
+
+```{r}
+dim(fit1_UGLT_Static_10f$estimates[[1]]$lambda_est)
+```
+
+```{r}
+plot(fit1_UGLT_Static_10f$draws$T_stat, type = 'l')
+
+```
+
+```{r}
+# Let's check the convergence diagnostics. 
+
+LaplacesDemon::ESS(fit1_UGLT_Static_10f$draws$T_stat)
+
+length(fit1_UGLT_Static_10f$draws$T_stat)
+```
+
+
+```{r}
+# Now fitting the bayesian factor model. Let's just try to use a static model with 10 factors.
+source(here('MCMC_Algorithms', 'run_mcmc_UGLT.R'))
+
+V = dim(dt_bact)[1]
+fit1_UGLT_10f=run_mcmc_UGLT(N = (dim(dt_bact)[2] - 1), q = 10, n_runs = 14000, alpha = rep(1, V),
+  beta = rep(1, V), theta.shape = rep(1.5, V), theta.rate = rep(1.5, V), hyperparams = list(aH = 2, bH = 2), data = as.matrix(dplyr::select(dt_bact, -c('feature'))), thin = 7, burn = 2000)
+saveRDS(fit1_UGLT_10f, 'fit1_UGLT_10f.rds')
+```
+
+```{r}
+fit1_UGLT_10f$estimates[[1]]$lambda_est
+
+```

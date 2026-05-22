@@ -19,6 +19,7 @@ compute_log_likelihood_ratio <- function(delta, l_new, j, factors, y, alpha, bet
   L_0_inv <- solve(L_0)
   factors <- t(factors)
   # Filtering out the columns
+  
   X_i_delta <- factors[, filter]
   L_iN_inv <- t(X_i_delta)%*%X_i_delta + L_0_inv
   L_iN <- solve(t(X_i_delta)%*%X_i_delta + L_0_inv)

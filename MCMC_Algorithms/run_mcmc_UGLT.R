@@ -17,6 +17,7 @@ source(here("MCMC_Algorithms", "compute_modes.R"))
 run_mcmc_UGLT <- function(N, q, n_runs, alpha, beta, theta.shape, theta.rate, hyperparams, data, thin = 1, burn = 1) {
   cli_progress_bar("Sampling from Posterior . . .", total = n_runs)
   y <- data
+  N <- ncol(y)
   V <- nrow(y)
   delta_start <- matrix(1, nrow = V, ncol = q)
   delta_start[upper.tri(delta_start, diag = FALSE)] <- 0
@@ -36,11 +37,19 @@ run_mcmc_UGLT <- function(N, q, n_runs, alpha, beta, theta.shape, theta.rate, hy
   tau_test[[1]] <- rep(0.5, q) # how to choose starting values for this?
   
   theta_test[[1]] <- rep(1, q) # how to choose starting values for this?
-  pc <- princomp(t(y))
-  scores <- pc$scores[, 1:q]
-  W[[1]] <- t(scores)
-  Lambda_est <- pc$loadings[, 1:q]
-  sigma_test[[1]] <- diag(cov(t(y - Lambda_est %*% W[[1]])))
+  # pc <- princomp(t(y))
+  # scores <- pc$scores[, 1:q]
+  # W[[1]] <- t(scores)
+  # Lambda_est <- pc$loadings[, 1:q]
+  # sigma_test[[1]] <- diag(cov(t(y - Lambda_est %*% W[[1]])))
+  
+  sv <- svd(y - rowMeans(y))
+  Lambda_est <- sv$u[, 1:q]
+  # Scores: q x n (right singular vectors scaled by singular values)
+  W[[1]] <- t(sv$v[, 1:q]) * sv$d[1:q]  # q x n
+  
+  # Residual variance per variable
+  sigma_test[[1]] <- diag(cov(t(y - rowMeans(y) - Lambda_est %*% W[[1]])))
   
   
   for (i in 2:n_runs) {
