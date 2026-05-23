@@ -2,3 +2,6 @@
 - `MCMC_Algorithms` contains code to run the MCMC samplers for the non-sparse PLT model, the UGLT model, and the sparse PLT model.
 - `Run_Simulations` contains code that was used to run the simulations for studies 1, 2 and 3 in the Thesis.
 - `Simulation_Analysis` contains code that was used to generate the plots and tables for studies 1, 2 and 3. 
+
+
+- `IMPORTANT NOTE`: This code is messy and inefficient. I'm currently working on optimizing slow functions, re writing parts of the code with rcpp, and writing the documentation.
