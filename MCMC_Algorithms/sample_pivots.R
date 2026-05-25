@@ -1,15 +1,21 @@
 source(here('MCMC_Algorithms', 'compute_log_likelihood_ratio.R'))
-#' Samples pivots
+#' Update pivot rows via Metropolis-Hastings moves
 #'
-#' @param delta The sparsity matrix (V x q)
-#' @param pivots Current pivot indexes l = (l1, ..., lq)
-#' @param factors Current factor draws (q x N matrix)
-#' @param y the data matrix (V x N matrix)
-#' @param hyperparams List with hyperparameters (aH, bH for 1PB prior)
-#' @param move_probs List with probabilities (pshift, pswitch, pa)
-#' @param alpha The scale parameters for the IG prior on the observation variances
-#' @param beta the rate parameters for the IG prior on the observation variances (TODO maybe make this a list)
-#' @return List with updated delta and pivots
+#' Applies one randomly chosen move per column j (shift, switch, or add/delete)
+#' to update the pivot vector \eqn{l = (l_1, \ldots, l_q)} and the sparsity matrix \eqn{\delta}.
+#' Columns are visited in random order.
+#'
+#' @param delta \eqn{v \times q} binary sparsity matrix \eqn{\delta}.
+#' @param pivots Length-q vector of current pivot row indices \eqn{l_1, \ldots, l_q}.
+#' @param factors \eqn{q \times N} factor matrix \eqn{F}.
+#' @param y \eqn{v \times N} data matrix \eqn{Y}.
+#' @param theta Length-q column shrinkage vector \eqn{\theta}.
+#' @param alpha Length-v shape parameters \eqn{\alpha} for the \eqn{G^{-1}} prior on \eqn{\sigma^2}.
+#' @param beta Length-v rate parameters \eqn{\beta} for the \eqn{G^{-1}} prior on \eqn{\sigma^2}.
+#' @param hyperparams List with elements \code{aH} and \code{bH} for the Beta prior on \eqn{\tau_j}.
+#' @param move_probs List with elements \code{pshift}, \code{pswitch}, \code{pa} controlling
+#'   the probability of each move type.
+#' @return List with updated \code{delta} (\eqn{v \times q}) and \code{pivots} (length-q).
 
 
 update_pivots <- function(delta, pivots, factors, y, theta, alpha, beta,
@@ -47,14 +53,24 @@ update_pivots <- function(delta, pivots, factors, y, theta, alpha, beta,
 }
 
 #' Shift pivot move
-#' 
-#' @param j the current column index being samples
-#' @return a list containing the updated pivots and corresponding sparsity matrix
+#'
+#' Proposes moving \eqn{l_j} to a new row uniformly drawn from rows below the current
+#' pivot and above the next non-zero entry in column j. Accepted via MH.
+#'
+#' @param delta \eqn{v \times q} binary sparsity matrix \eqn{\delta}.
+#' @param pivots Length-q pivot vector.
+#' @param factors \eqn{q \times N} factor matrix \eqn{F}.
+#' @param y \eqn{v \times N} data matrix \eqn{Y}.
+#' @param theta Length-q column shrinkage vector \eqn{\theta}.
+#' @param alpha Length-v shape parameters \eqn{\alpha}.
+#' @param beta Length-v rate parameters \eqn{\beta}.
+#' @param hyperparams List with \code{aH} and \code{bH}.
+#' @param j Column index to update.
+#' @return List with updated \code{delta} and \code{pivots}.
 
 shift_pivot_move <- function(delta, pivots, factors, y, theta, alpha, beta, hyperparams, j) {
   V <- nrow(delta)
   q <- ncol(delta)
-  pivots <- apply(delta, 2, function(col) which(col != 0)[1])
   lj <- pivots[j]
   
   # if the pivot is equal to V, the column will be spurious.
@@ -125,13 +141,23 @@ shift_pivot_move <- function(delta, pivots, factors, y, theta, alpha, beta, hype
 
 #' Switch pivots move
 #'
-#' @return List with updated delta and pivots
+#' Proposes swapping indicators \eqn{\delta_{i,j} \leftrightarrow \delta_{i,l}} over the rows where they
+#' differ, for a randomly selected second column l. Accepted via MH.
+#'
+#' @param delta \eqn{v \times q} binary sparsity matrix \eqn{\delta}.
+#' @param pivots Length-q pivot vector.
+#' @param factors \eqn{q \times N} factor matrix \eqn{F}.
+#' @param y \eqn{v \times N} data matrix \eqn{Y}.
+#' @param theta Length-q column shrinkage vector \eqn{\theta}.
+#' @param alpha Length-v shape parameters \eqn{\alpha}.
+#' @param beta Length-v rate parameters \eqn{\beta}.
+#' @param hyperparams List with \code{aH} and \code{bH}.
+#' @param j Column index to update.
+#' @return List with updated \code{delta} and \code{pivots}.
 switch_pivots_move <- function(delta, pivots, factors, y, theta, alpha, beta, hyperparams, j) {
   V <- nrow(delta)
   q <- ncol(delta)
-  
-  pivots <- apply(delta, 2, function(col) which(col != 0)[1])
-  
+
   if (dim(delta)[2] <= 1) {
     return(list(delta = delta, pivots = pivots))
   }
@@ -221,15 +247,25 @@ switch_pivots_move <- function(delta, pivots, factors, y, theta, alpha, beta, hy
   }
 }
 
-#' Add/delete move
+#' Add/delete pivot move dispatcher
 #'
-#' @param pa the (tuning) probability of adding a pivot
-#' @return List with updated delta and pivots
+#' Decides whether to attempt an add or delete pivot move for column j, then
+#' delegates to \code{add_pivot_move} or \code{delete_pivot_move}.
+#'
+#' @param delta \eqn{v \times q} binary sparsity matrix \eqn{\delta}.
+#' @param pivots Length-q pivot vector.
+#' @param factors \eqn{q \times N} factor matrix \eqn{F}.
+#' @param y \eqn{v \times N} data matrix \eqn{Y}.
+#' @param theta Length-q column shrinkage vector \eqn{\theta}.
+#' @param alpha Length-v shape parameters \eqn{\alpha}.
+#' @param beta Length-v rate parameters \eqn{\beta}.
+#' @param hyperparams List with \code{aH} and \code{bH}.
+#' @param pa Tuning probability of proposing an add move when both add and delete are possible.
+#' @param j Column index to update.
+#' @return List with updated \code{delta} and \code{pivots}.
 
 add_delete_pivot_move <- function(delta, pivots, factors, y, theta, alpha, beta,
                                   hyperparams, pa, j) {
-  pivots <- apply(delta, 2, function(col) which(col != 0)[1])
-  
   V <- nrow(delta)
   q <- ncol(delta)
   lj <- pivots[j]
@@ -288,16 +324,28 @@ add_delete_pivot_move <- function(delta, pivots, factors, y, theta, alpha, beta,
 
 
 #' Add pivot move
-#' @param p_add_delta the precomputed probability of adding a pivot (given pa)
-#' @param available_positions the sample space (a list of row indeces available)
-#' @return List with updated delta and pivots
+#'
+#' Proposes a new pivot row \eqn{l_\mathrm{new} < l_j} for column j from the available positions,
+#' sets \eqn{\delta_{l_\mathrm{new}, j} = 1}, and accepts via MH with a reversibility correction.
+#'
+#' @param delta \eqn{v \times q} binary sparsity matrix \eqn{\delta}.
+#' @param pivots Length-q pivot vector.
+#' @param j Column index to update.
+#' @param factors \eqn{q \times N} factor matrix \eqn{F}.
+#' @param y \eqn{v \times N} data matrix \eqn{Y}.
+#' @param theta Length-q column shrinkage vector \eqn{\theta}.
+#' @param alpha Length-v shape parameters \eqn{\alpha}.
+#' @param beta Length-v rate parameters \eqn{\beta}.
+#' @param hyperparams List with \code{aH} and \code{bH}.
+#' @param available_positions Integer vector of rows available as the new pivot.
+#' @param p_add_delta Probability of proposing an add move (precomputed by dispatcher).
+#' @param pa Tuning probability of adding a pivot when both moves are possible.
+#' @return List with updated \code{delta} and \code{pivots}.
 
 add_pivot_move <- function(delta, pivots, j, factors, y, theta, alpha, beta,
                            hyperparams, available_positions, p_add_delta, pa) {
   V <- nrow(delta)
   q <- ncol(delta)
-  pivots <- apply(delta, 2, function(col) which(col != 0)[1])
-  
   lj <- pivots[j]
   
   # Propose a new position uniformly
@@ -322,8 +370,6 @@ add_pivot_move <- function(delta, pivots, j, factors, y, theta, alpha, beta,
   } else {
     p_add_new <- pa
   }
-  
-  proposal_ratio <- ((1 - p_add_new) * length(available_positions)) / (p_add_delta)
   
   # Calculate likelihood ratio
   delta_new <- delta
@@ -350,25 +396,39 @@ add_pivot_move <- function(delta, pivots, j, factors, y, theta, alpha, beta,
     pivots_new <- apply(new_delta, 2, function(col) which(col != 0)[1])
     return(list(delta = new_delta, pivots = pivots_new))
   } else {
-    pivots <- apply(delta, 2, function(col) which(col != 0)[1])
-    
     return(list(delta = delta, pivots = pivots))
   }
 }
 
 #' Delete pivot move
+#'
+#' Proposes removing the current pivot row \eqn{l_j} from column j (setting \eqn{\delta_{l_j, j} = 0}),
+#' shifting the pivot to the next active entry. Accepted via MH with reversibility correction.
+#'
+#' @param delta \eqn{v \times q} binary sparsity matrix \eqn{\delta}.
+#' @param pivots Length-q pivot vector.
+#' @param j Column index to update.
+#' @param l_star Row index of the next non-zero entry below \eqn{l_j} in column j.
+#' @param factors \eqn{q \times N} factor matrix \eqn{F}.
+#' @param y \eqn{v \times N} data matrix \eqn{Y}.
+#' @param theta Length-q column shrinkage vector \eqn{\theta}.
+#' @param alpha Length-v shape parameters \eqn{\alpha}.
+#' @param beta Length-v rate parameters \eqn{\beta}.
+#' @param hyperparams List with \code{aH} and \code{bH}.
+#' @param p_add_delta Probability of proposing an add move (precomputed by dispatcher).
+#' @param pa Tuning probability of adding a pivot when both moves are possible.
+#' @return List with updated \code{delta} and \code{pivots}.
 
 delete_pivot_move <- function(delta, pivots, j, l_star, factors, y, theta, alpha, beta,
                               hyperparams, p_add_delta, pa) {
   V <- nrow(delta)
-  pivots <- apply(delta, 2, function(col) which(col != 0)[1])
   lj <- pivots[j]
   
   # Calculate likelihood ratio (negative of add move)
   O_delete <- - compute_log_likelihood_ratio(delta, lj, j, factors, y, alpha, beta, theta)
   # Calculate prior ratio for delete move (equation G.5)
   dj <- sum(delta[, j])
-  R_delete <- lbeta(hyperparams$aH + dj - 2, hyperparams$bH + V - l_star - dj + 2) /
+  R_delete <- lbeta(hyperparams$aH + dj - 2, hyperparams$bH + V - l_star - dj + 2) -
     lbeta(hyperparams$aH + dj - 1, hyperparams$bH + V - lj - dj + 1)
   
   # computing the 'reversabilization' part
@@ -388,7 +448,6 @@ delete_pivot_move <- function(delta, pivots, j, l_star, factors, y, theta, alpha
     
     return(list(delta = new_delta, pivots = new_pivots))
   } else {
-    pivots <- apply(delta, 2, function(col) which(col != 0)[1])
     return(list(delta = delta, pivots = pivots))
   }
 }

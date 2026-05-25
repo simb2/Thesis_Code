@@ -13,10 +13,33 @@ source(here("MCMC_Algorithms", "filter_factors.R"))
 source(here("MCMC_Algorithms", "compute_modes.R"))
 
 
+#' Run the sparse PLT factor model MCMC sampler (static pivots)
+#'
+#' Implements a Gibbs sampler for the sparse PLT model with fixed pivots
+#' \eqn{l_j = j}. Each iteration samples \eqn{\tau}, \eqn{\delta}, \eqn{\Lambda}, \eqn{\sigma^2},
+#' \eqn{F}, and \eqn{\theta} in sequence, followed by the GIG boost step.
+#' Applies post-processing: identifiability filtering, column reordering by
+#' pivot, and sign fixing
+#'
+#' @param N Number of observations N (should equal \code{ncol(data)}).
+#' @param q Number of factors \eqn{q}.
+#' @param n_runs Total number of MCMC iterations.
+#' @param alpha Length-v shape parameters \eqn{\alpha} for the \eqn{G^{-1}} prior on \eqn{\sigma^2}.
+#' @param beta Length-v rate parameters \eqn{\beta} for the \eqn{G^{-1}} prior on \eqn{\sigma^2}.
+#' @param theta.shape Scalar shape hyperparameter \eqn{a_\theta} for the \eqn{G^{-1}} prior on \eqn{\theta}.
+#' @param theta.rate Scalar rate hyperparameter \eqn{b_\theta} for the \eqn{G^{-1}} prior on \eqn{\theta}.
+#' @param hyperparams List with \code{aH} and \code{bH} for the Beta prior on \eqn{\tau}.
+#' @param data \eqn{v \times N} data matrix \eqn{Y}.
+#' @param thin Thinning interval (retain every \code{thin}-th draw after burn-in).
+#' @param burn Index of the first draw to retain.
+#' @param ident Logical; if \code{TRUE}, discard draws that fail the 3579 counting rule.
+#' @return List with \code{estimates} (posterior summaries by factor dimension r)
+#'   and \code{draws} (tibble of retained MCMC draws).
 run_mcmc_sparse_PLT <- function(N, q, n_runs, alpha, beta, theta.shape, theta.rate, hyperparams, data, thin = 1, burn = 1, ident = TRUE) {
   cli_progress_bar("Sampling from Posterior . . .", total = n_runs)
   y <- data
   V <- nrow(y)
+  inner_prod_y <- rowSums(y^2)
   delta_start <- matrix(1, nrow = V, ncol = q)
   delta_start[upper.tri(delta_start, diag = FALSE)] <- 0
   pivots_start <- 1:q
@@ -32,9 +55,9 @@ run_mcmc_sparse_PLT <- function(N, q, n_runs, alpha, beta, theta.shape, theta.ra
   accepted <- 0
   delta_test[[1]] <- delta_start
   pivot_test[[1]] <- pivots_start
-  tau_test[[1]] <- rep(0.5, q) # how to choose starting values for this?
+  tau_test[[1]] <- rep(0.5, q)
   
-  theta_test[[1]] <- rep(1, q) # how to choose starting values for this?
+  theta_test[[1]] <- rep(1, q)
   pc <- princomp(t(y))
   scores <- pc$scores[, 1:q]
   W[[1]] <- t(scores)
@@ -44,11 +67,11 @@ run_mcmc_sparse_PLT <- function(N, q, n_runs, alpha, beta, theta.shape, theta.ra
   
   for (i in 2:n_runs) {
     tau_test[[i]] <- sample_tau(hyperparams, delta_test[[i - 1]], pivot_test[[i - 1]])
-    res <- sample_sparsity(y, W[[i - 1]], tau_test[[i]], theta_test[[i - 1]], delta_test[[i - 1]], alpha, beta)
+    res <- sample_sparsity(y, W[[i - 1]], tau_test[[i]], theta_test[[i - 1]], delta_test[[i - 1]], alpha, beta, inner_prod_y)
     delta_test[[i]] <- res$delta_new
     pivots_new <- apply(res$delta_new, 2, function(col) which(col != 0)[1])
     pivot_test[[i]] <- 1:q
-    res3 <- sample_loadings_variances(y, W[[i - 1]], delta_test[[i]], theta_test[[i - 1]], alpha, beta)
+    res3 <- sample_loadings_variances(y, W[[i - 1]], delta_test[[i]], theta_test[[i - 1]], alpha, beta, inner_prod_y)
     Lambda_test[[i]] <- res3$Lambda_new
     sigma_test[[i]] <- res3$sigma2_new
     W[[i]] <- sample_factors(Lambda_test[[i]], sigma_test[[i]], y, q)

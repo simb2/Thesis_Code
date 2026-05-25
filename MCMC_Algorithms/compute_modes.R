@@ -1,5 +1,10 @@
-# finding posterior estimates:
-
+#' Compute the posterior mode of \eqn{\delta}
+#'
+#' Finds the most frequently visited sparsity pattern across a set of draws
+#' with the same number of factors r.
+#'
+#' @param x Tibble of draws (filtered to a fixed r), with a \code{delta_test} list-column.
+#' @return \eqn{v \times r} matrix of the modal sparsity pattern.
 post_mode_delta <- function(x) {
   delta_test <- array(NA, dim = c(length(x$delta_test), 
                                   nrow(x$delta_test[[1]]), # V
@@ -19,31 +24,29 @@ post_mode_delta <- function(x) {
          nrow = nrow(x$delta_test[[1]]))
 }
 
+#' Compute the posterior mean of \eqn{\Lambda} under the modal \eqn{\delta}
+#'
+#' Averages loading matrices over draws where the sparsity pattern matches
+#' \code{post_mode_delta} exactly.
+#'
+#' @param x Tibble of draws with \code{Lambda_test} and \code{delta_test} list-columns.
+#' @param post_mode_delta \eqn{v \times r} modal sparsity matrix from \code{post_mode_delta()}.
+#' @return \eqn{v \times r} posterior mean loading matrix.
 post_est_lambda <- function(x, post_mode_delta) {
-  
-  filtered_lambda <- list()
-  true_vals <- c()
-  post_mean_lambda <- matrix(0, nrow = nrow(x$Lambda_test[[1]]), ncol = ncol(x$Lambda_test[[1]]))
-  for (n in seq_along(x$Lambda_test)) {
-    if (all((x$Lambda_test[[n]] != 0) * 1 == post_mode_delta)) {
-      print(TRUE)
-      filtered_lambda[[n]] <- x$Lambda_test[[n]]
-      true_vals[length(true_vals) + 1] <- n
-    }
-  }
-  if (length(true_vals) > 1) {
-    filtered_lambda <- filtered_lambda[true_vals]
-    for (m in filtered_lambda) {
-      post_mean_lambda = post_mean_lambda + m
-    }
-    post_mean_lambda = post_mean_lambda/(length(filtered_lambda))
-  } else {
-    post_mean_lambda <- filtered_lambda[[1]]
-  }
-  
-  return(post_mean_lambda)
+  matches <- which(vapply(x$delta_test, function(d) all(d == post_mode_delta), logical(1)))
+  if (length(matches) == 0)
+    return(matrix(0, nrow(post_mode_delta), ncol(post_mode_delta)))
+  matched <- x$Lambda_test[matches]
+  Reduce("+", matched) / length(matched)
 }
 
+#' Compute posterior means of \eqn{\sigma^2}, \eqn{\tau}, \eqn{\theta}, and \eqn{F}
+#'
+#' Averages \eqn{\sigma^2}, \eqn{\tau}, \eqn{\theta}, and \eqn{F} across all draws in \code{x}.
+#'
+#' @param x Tibble of draws with list-columns \code{sigma_test}, \code{tau_test},
+#'   \code{theta_test}, and \code{W}.
+#' @return List with \code{sigma2_mean}, \code{tau_mean}, \code{theta_mean}, \code{factors_est}.
 compute_post_means <- function(x) {
   sigma2_mean <- numeric(length = length(x$sigma_test[[1]]))
   tau_mean <- theta_mean <- numeric(length = length(x$tau_test[[1]]))

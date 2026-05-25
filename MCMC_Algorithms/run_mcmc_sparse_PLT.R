@@ -17,6 +17,7 @@ run_mcmc_sparse_PLT <- function(N, q, n_runs, alpha, beta, theta.shape, theta.ra
   cli_progress_bar("Sampling from Posterior . . .", total = n_runs)
   y <- data
   V <- nrow(y)
+  inner_prod_y <- rowSums(y^2)
   delta_start <- matrix(1, nrow = V, ncol = q)
   delta_start[upper.tri(delta_start, diag = FALSE)] <- 0
   pivots_start <- 1:q
@@ -44,11 +45,11 @@ run_mcmc_sparse_PLT <- function(N, q, n_runs, alpha, beta, theta.shape, theta.ra
   
   for (i in 2:n_runs) {
     tau_test[[i]] <- sample_tau(hyperparams, delta_test[[i - 1]], pivot_test[[i - 1]])
-    res <- sample_sparsity(y, W[[i - 1]], tau_test[[i]], theta_test[[i - 1]], delta_test[[i - 1]], alpha, beta)
+    res <- sample_sparsity(y, W[[i - 1]], tau_test[[i]], theta_test[[i - 1]], delta_test[[i - 1]], alpha, beta, inner_prod_y)
     delta_test[[i]] <- res$delta_new
     pivots_new <- apply(res$delta_new, 2, function(col) which(col != 0)[1])
     pivot_test[[i]] <- 1:q
-    res3 <- sample_loadings_variances(y, W[[i - 1]], delta_test[[i]], theta_test[[i - 1]], alpha, beta)
+    res3 <- sample_loadings_variances(y, W[[i - 1]], delta_test[[i]], theta_test[[i - 1]], alpha, beta, inner_prod_y)
     Lambda_test[[i]] <- res3$Lambda_new
     sigma_test[[i]] <- res3$sigma2_new
     W[[i]] <- sample_factors(Lambda_test[[i]], sigma_test[[i]], y, q)

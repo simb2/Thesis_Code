@@ -6,7 +6,6 @@ editor: visual
 
 ## Library Imports
 
-
 ```{r}
 library(data.table)
 library(purrr)
@@ -18,7 +17,6 @@ library(here)
 source(here('MCMC_Algorithms', 'run_mcmc_UGLT_Static.R'))
 set.seed(1)
 ```
-
 
 ```{r}
 dt <- fread("ftp://ftp.ebi.ac.uk/pub/databases/mofa/microbiome/data.txt.gz")
@@ -33,16 +31,13 @@ dt_bact = dt[dt$view == 'Bacteria', ]
 head(dt_bact)
 ```
 
-
 ```{r}
 dt_bact = dt_bact |> tidyr::pivot_wider(names_from = sample, values_from = 'value') |> dplyr::select(-c('view'))
 ```
 
-
 ```{r}
 head(dt_bact)
 ```
-
 
 ```{r}
 # Now fitting the bayesian factor model. Let's just try to use a static model with 10 factors.
@@ -56,6 +51,7 @@ fit1_UGLT_Static_10f=run_mcmc_UGLT(N = (dim(dt_bact)[2] - 1), q = 10, n_runs = 1
 fit1_UGLT_Static_10f$estimates[[1]]$lambda_est
 
 ```
+
 ```{r}
 colSums(fit1_UGLT_Static_10f$estimates[[1]]$lambda_est == 0)
 ```
@@ -76,7 +72,6 @@ LaplacesDemon::ESS(fit1_UGLT_Static_10f$draws$T_stat)
 
 length(fit1_UGLT_Static_10f$draws$T_stat)
 ```
-
 
 ```{r}
 # Now fitting the bayesian factor model. Let's just try to use a static model with 10 factors.
