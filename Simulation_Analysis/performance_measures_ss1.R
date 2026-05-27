@@ -1,19 +1,25 @@
-# Model results
+# performance measures: simulation study 1 (noisy variables)
 colours <- c('#332288', '#117733', '#44AA99', '#88CCEE',
              '#DDCC77', '#CC6677', '#AA4499', '#882255')
-options(ggplot2.discrete.colour= colours)
+options(ggplot2.discrete.colour = colours)
 
-
-# I'm gonna have to read over this part again very very carefully!!!!
 library(tidyverse)
 library(here)
 library(MASS)
-results_nsp2 <- readRDS(here('results_nsp2.rds'))
-results_no_nsp2 <- readRDS(here('results_no_nsp2.rds'))
-results_no_sp2_Sparse_PLT  <- readRDS(here('results_no_sp2_Sparse_PLT.rds'))
-results_no_sp2_UGLT  <- readRDS(here('results_no_sp2_UGLT.rds'))
-results_sp2_Sparse_PLT <- readRDS(here('results_sp2_Sparse_PLT.rds'))
-results_sp2_UGLT <- readRDS(here('results_sp2_UGLT.rds'))
+
+set.seed(1)
+
+# Saved by sim_study_noisy_variables.R:
+results_no_nsp2        <- readRDS(here("results_no_nsp2.rds"))
+results_sp2_Sparse_PLT <- readRDS(here("results_sp2_Sparse_PLT.rds"))
+results_sp2_UGLT       <- readRDS(here("results_sp2_UGLT.rds"))
+
+# TODO: the three files below are not saved by any current run script.
+# A second run of sim_study_noisy_variables.R (noisy-variable setting) should
+# produce results_nsp2.rds, results_no_sp2_Sparse_PLT.rds, results_no_sp2_UGLT.rds.
+results_nsp2              <- readRDS(here("results_nsp2.rds"))
+results_no_sp2_Sparse_PLT <- readRDS(here("results_no_sp2_Sparse_PLT.rds"))
+results_no_sp2_UGLT       <- readRDS(here("results_no_sp2_UGLT.rds"))
 
 source(here("Run_Simulations", 'sim_study_noisy_variables_helpers.R'))
 source(here("Run_Simulations", 'sim_data_3.R'))
@@ -194,7 +200,7 @@ ggplot(df_all, aes(x = N, y = value, color = noisy, shape = mod)) +
   facet_grid(metric ~ V, scales = "free_y", labeller = labeller(V = label_both)) +
   theme_minimal() +
   labs(
-    color = "Noise Conditio",
+    color = "Noise Condition",
     shape = "Model",
     x = "Number of Observations (N)",
     y = ""

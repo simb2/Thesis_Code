@@ -1,4 +1,10 @@
-df_builder <- function(obj, func) {
+# convergence diagnostics: simulation study 1 (noisy variables)
+# Depends on results objects loaded by performance_measures_ss1.R.
+library(tidyverse)
+
+set.seed(1)
+
+df_builder <- function(obj) {
   get_diag <- function(obj, func) {
     diagnost <- purrr::map(obj$post_samps, function(x){
       if (!is.null(x$draws)) {
@@ -6,7 +12,7 @@ df_builder <- function(obj, func) {
       } else {
         func(x$T_stat)
       }
-    }) 
+    })
     return(diagnost)
   }
   geweke_results <- get_diag(obj, LaplacesDemon::Geweke.Diagnostic)

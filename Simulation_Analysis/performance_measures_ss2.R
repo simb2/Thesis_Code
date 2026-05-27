@@ -1,12 +1,17 @@
 # performance measures 2
 colours <- c('#332288', '#117733', '#44AA99', '#88CCEE',
              '#DDCC77', '#CC6677', '#AA4499', '#882255')
-# Model results
+options(ggplot2.discrete.colour = colours)
+
 library(tidyverse)
 library(MASS)
-results_uglt_setting_plt <- readRDS(here("results_uglt_setting_plt.rds"))
+library(here)
+
+set.seed(1)
+
+results_uglt_setting_plt  <- readRDS(here("results_uglt_setting_plt.rds"))
 results_uglt_setting_UGLT <- readRDS(here("results_uglt_setting_UGLT.rds"))
-source("Run_Simulations" ,'sim_data_3.R')
+source(here("Run_Simulations", "sim_data_3.R"))
 
 compute_goodness_of_fit <- function(N, V, q, Lambda, Sigma, factors, Lambda_est, sigma_est, factors_est) {
   runs <- 20

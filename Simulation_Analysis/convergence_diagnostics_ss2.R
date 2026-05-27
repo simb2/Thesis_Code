@@ -1,8 +1,11 @@
-# convergence_diagnostics ss2
+# convergence diagnostics: simulation study 2 (UGLT structure)
+library(tidyverse)
+library(here)
 
-results_uglt_setting_plt <- readRDS(here('results_uglt_setting_plt.rds'))
+set.seed(1)
+
+results_uglt_setting_plt <- readRDS(here("results_uglt_setting_plt.rds"))
 results_uglt_setting_UGLT <- readRDS(here("results_uglt_setting_UGLT.rds"))
-
 
 geweke_results <- purrr::map(results_uglt_setting_plt$post_samps, function(x){
   LaplacesDemon::Geweke.Diagnostic(x$draws$T_stat)
@@ -41,7 +44,7 @@ df_plt <- tibble(
     ESS_ratio = ESS/samps
   )
 df_uglt <- tibble(
-  mod = "Sparse PLT", 
+  mod = "UGLT",
   V = results_uglt_setting_UGLT$V, 
   N = results_uglt_setting_UGLT$N, 
   samps = unlist(lengths_UGLT),

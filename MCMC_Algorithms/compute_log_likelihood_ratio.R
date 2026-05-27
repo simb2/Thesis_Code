@@ -33,7 +33,7 @@ compute_log_likelihood_ratio <- function(delta, l_new, j, factors, y, alpha, bet
   
   log_lik <- 0.5*(log(det(L_iN)) - log(det(L_0))) - 0.5*N*log(2*pi) +
     alpha[i]*log(beta[i]) - lgamma(alpha[i])+ lgamma(N/2 + alpha[i]) -
-    (N/2 + alpha[i])*log(beta[i] * 0.5*(t(y[i, ])  %*% (y[i, ]) -
+    (N/2 + alpha[i])*log(beta[i] + 0.5*(t(y[i, ])  %*% (y[i, ]) -
                                           t(M_i) %*% solve(L_iN) %*% M_i))
   
   delta[i, j] <- 0
@@ -56,7 +56,7 @@ compute_log_likelihood_ratio <- function(delta, l_new, j, factors, y, alpha, bet
     M_i <- L_iN %*% t(X_i_delta) %*% y[i, ]
     log_lik_null <- 0.5*(log(det(L_iN)) - log(det(L_0))) - 0.5*N*log(2*pi) +
       alpha[i]*log(beta[i]) - lgamma(alpha[i])+ lgamma(N/2 + alpha[i]) -
-      (N/2 + alpha[i])*log(beta[i] * 0.5*(t(y[i, ])  %*% y[i, ] -
+      (N/2 + alpha[i])*log(beta[i] + 0.5*(t(y[i, ])  %*% y[i, ] -
                                             t(M_i) %*% solve(L_iN) %*% M_i))
   }
   PO = log_lik - log_lik_null

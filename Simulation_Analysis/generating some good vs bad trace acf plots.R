@@ -1,6 +1,7 @@
+set.seed(42)
+
 par(mfrow = c(1, 2))
 
-set.seed(42)
 n <- 5000
 
 target_density <- function(x) dnorm(x, mean = 0, sd = 1, log = TRUE)
